@@ -3,24 +3,10 @@ from decouple import config
 import asyncio
 import re
 import tinydb
-
+from database import insert_curso
 bot = AsyncTeleBot('7929476900:AAHiHmi2ZBqPiu8HZnlyjwJy0z6GwXFs458')
-canal = -1002252592068
+canal = -1001790437275   #-1002252592068
 db = tinydb.TinyDB('cursos.json')
-
-async def insert_curso(imagem=None, nome=None, categoria=None, tipo=None, tamanho=None, duracao=None, autor=None, link_curso=None):
-    db.insert({
-        'imagem': imagem,
-        'nome': nome,
-        'categoria': categoria,
-        'tipo': tipo,
-        'tamanho': tamanho,
-        'duracao': duracao,
-        'autor': autor,
-        'link_curso': link_curso
-    })
-    print('Inserido')
-
 
 
 
@@ -107,6 +93,15 @@ async def handle_message(message):
         'padrao6': {
             'convite': r'Convite: (https?://\S+)|\((https?://\S+)\)',
         },
+        'padrao7': {
+            'assistir': r'👉Assistir Curso👈',
+        },
+        'padrao8': {
+            'assistir': r'→ ASSISTIR CURSO',
+        },
+        'padrao9': {
+            'assistir': r'Assistir Curso (https?://\S+)',
+        },
         
     }
     
@@ -139,7 +134,7 @@ async def handle_message(message):
                     await bot.send_photo(canal, imagem,
                     caption= construir_mensagem(nome_curso,tamanho=tamanho,duracao=duracao,link_curso=link_curso), parse_mode='Markdownv2')
                     
-                    await insert_curso(imagem=download, nome=nome_curso, categoria=None,
+                    insert_curso(imagem=download, nome=nome_curso, categoria=None,
                                         tipo=None, tamanho=tamanho, duracao=duracao, autor=None, link_curso=link_curso)                                            
                 
                 elif nome_padroes == 'padrao2':
@@ -178,7 +173,7 @@ async def handle_message(message):
                     await bot.send_photo(canal, imagem,
                     caption=construir_mensagem(nome_curso,tamanho=tamanho,duracao=duracao,link_curso=link_curso), parse_mode='Markdownv2')
 
-                    await insert_curso(imagem=download, nome=nome_curso, categoria=None,
+                    insert_curso(imagem=download, nome=nome_curso, categoria=None,
                                         tipo=None, tamanho=tamanho, duracao=duracao, autor=None, link_curso=link_curso)                                            
                 
 
@@ -210,7 +205,7 @@ async def handle_message(message):
                     await bot.send_photo(canal, imagem,
                     caption= construir_mensagem(nome=nome, imagem=download,tamanho=tamanho,categoria=categoria ,duracao=duracao,link_curso=link_curso), parse_mode='Markdownv2')
                     
-                    await insert_curso(imagem=download, nome=nome, categoria=categoria,tipo=None, tamanho=tamanho,
+                    insert_curso(imagem=download, nome=nome, categoria=categoria,tipo=None, tamanho=tamanho,
                                         duracao=None, autor=None, link_curso=link_curso)
                 elif nome_padroes == 'padrao4':
                     imagem = message.photo[-1].file_id
@@ -240,7 +235,7 @@ async def handle_message(message):
                         await bot.send_photo(canal, imagem,
                         caption= construir_mensagem(nome=nome,tamanho=tamanho,categoria=categoria, link_curso=link_curso), parse_mode='Markdownv2')
                         
-                        await insert_curso(nome=nome,imagem=download, tamanho=tamanho,categoria=categoria, link_curso=link_curso)
+                        insert_curso(nome=nome,imagem=download, tamanho=tamanho,categoria=categoria, link_curso=link_curso)
     
                 elif nome_padroes == 'padrao5':
                     match = re.search(r'CLIQUE AQUI PARA ASSISTIR', legenda)
@@ -271,7 +266,7 @@ async def handle_message(message):
                         caption= construir_mensagem(nome=nome,tamanho=tamanho,categoria=categoria,
                                                     link_curso=link_curso), parse_mode='Markdownv2')
 
-                        await insert_curso(imagem=download, nome=nome, tamanho=tamanho,categoria=categoria, link_curso=link_curso )
+                        insert_curso(imagem=download, nome=nome, tamanho=tamanho,categoria=categoria, link_curso=link_curso )
                 elif nome_padroes == 'padrao6':
                 
                     imagem = message.photo[-1].file_id
@@ -288,7 +283,52 @@ async def handle_message(message):
                     await bot.send_photo(canal, imagem,
                     caption= construir_mensagem(nome=nome,tamanho=tamanho,duracao=duracao,link_curso=convite), parse_mode='Markdownv2')
                     
-                    await insert_curso(imagem=download, nome=nome, tamanho=tamanho,duracao=duracao,link_curso=convite)
+                    insert_curso(imagem=download, nome=nome, tamanho=tamanho,duracao=duracao,link_curso=convite)
+
+
+
+                elif nome_padroes == 'padrao7':
+                    imagem = message.photo[-1].file_id
+                    byte =  await bot.get_file(imagem)
+                    file_path = byte.file_path
+                    download = await bot.download_file(file_path)
+                    nome = legenda.split("\n")[0]
+                    tamanho = re.search(r"Tamanho: ([\d.]+ ?(?:GB|GiB))", legenda, re.IGNORECASE).group(1)
+                    duracao_match = re.search(r"Duração: (\d+)h (\d+)min", legenda, re.IGNORECASE)
+                    duracao = f"{duracao_match.group(1)}h {duracao_match.group(2)}min" if duracao_match else "Duração N/A"
+                    
+                    print(nome)
+                    links = message.caption_entities
+                    lista_links = []
+                    for link in links:
+                        if link.type == "text_link":
+                            lista_links.append(link.url)
+                    link_curso = lista_links[0]
+                    
+                    await bot.send_photo(canal, imagem, caption=construir_mensagem(nome=nome,tamanho=tamanho,duracao=duracao,link_curso=link_curso), parse_mode='Markdownv2')
+                    insert_curso(imagem=download, nome=nome, tamanho=tamanho,duracao=duracao,link_curso=link_curso)
+
+                elif nome_padroes == 'padrao8':
+                    imagem = message.photo[-1].file_id
+                    byte =  await bot.get_file(imagem)
+                    file_path = byte.file_path
+                    download = await bot.download_file(file_path)
+                    nome = legenda.split("\n")[0]
+                    tamanho = re.search(r"Tamanho: ([\d.]+ ?(?:GB|GiB))", legenda, re.IGNORECASE).group(1)
+                    duracao_match = re.search(r"Duração: (\d+)h (\d+)min", legenda, re.IGNORECASE)
+                    duracao = f"{duracao_match.group(1)}h {duracao_match.group(2)}min" if duracao_match else "Duração N/A"
+                    
+                    print(nome)
+                    links = message.caption_entities
+                    lista_links = []
+                    for link in links:
+                        if link.type == "text_link":
+                            lista_links.append(link.url)
+                    link_curso = lista_links[0]
+                    
+                    await bot.send_photo(canal, imagem, caption=construir_mensagem(nome=nome,tamanho=tamanho,duracao=duracao,link_curso=link_curso), parse_mode='Markdownv2')
+                    insert_curso(imagem=download, nome=nome, tamanho=tamanho,duracao=duracao,link_curso=link_curso)
+                    
 async def main():
     await bot.polling(none_stop=True)
 
