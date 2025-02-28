@@ -5,9 +5,14 @@ import re
 import tinydb
 from database import insert_curso
 bot = AsyncTeleBot('7929476900:AAHiHmi2ZBqPiu8HZnlyjwJy0z6GwXFs458')
-canal = -1001790437275   #-1002252592068
-db = tinydb.TinyDB('cursos.json')
+#canal produção
+canal =  -1002252592068
 
+#canal teste
+#canal = -1001790437275
+
+db = tinydb.TinyDB('cursos.json')
+-1001790437275
 
 
 @bot.message_handler(commands=['ping'])
@@ -76,10 +81,7 @@ async def handle_message(message):
         'padrao1': {
             'bt_assistir': r'➡️Assistir Curso⬅️'
         },
-        'padrao2': {
-            'lançamento': r'📅 Lançamento:',
-            'copy': r'©️',
-        },
+        
         'padrao3': {
             'autor': r"@iAzazelOfc",
         },
@@ -101,6 +103,13 @@ async def handle_message(message):
         },
         'padrao9': {
             'assistir': r'Assistir Curso (https?://\S+)',
+        },
+        'padrao10': {
+            'assistir': r'@Extreme_CursosGratis',
+        },
+
+        'padrao11': {
+            'assistir': r'⬇️Assistir Curso⬇️',
         },
         
     }
@@ -193,7 +202,8 @@ async def handle_message(message):
                     categoria = f"{categoria_match.group(1)}" if categoria_match else "Categoria N/A"
                     tamanho_match = re.search(r"Tamanho: ([\d.]+ ?(?:GB|GiB))", legenda, re.IGNORECASE)
                     tamanho = f"{tamanho_match.group(1)}" if tamanho_match else "Tamanho N/A"
-                    
+                    duracao_match = re.search(r"Duração: (\d+)h (\d+)min", legenda, re.IGNORECASE)
+                    duracao = f"{duracao_match.group(1)}h {duracao_match.group(2)}min" if duracao_match else "Duração N/A"
                     links = message.caption_entities
                     lista_links = []
                     for link in links:
@@ -203,7 +213,7 @@ async def handle_message(message):
                     link_curso = lista_links[1]
                     
                     await bot.send_photo(canal, imagem,
-                    caption= construir_mensagem(nome=nome, imagem=download,tamanho=tamanho,categoria=categoria ,duracao=duracao,link_curso=link_curso), parse_mode='Markdownv2')
+                    caption= construir_mensagem(nome=nome,tamanho=tamanho,categoria=categoria ,duracao=duracao,link_curso=link_curso), parse_mode='Markdownv2')
                     
                     insert_curso(imagem=download, nome=nome, categoria=categoria,tipo=None, tamanho=tamanho,
                                         duracao=None, autor=None, link_curso=link_curso)
@@ -239,7 +249,8 @@ async def handle_message(message):
     
                 elif nome_padroes == 'padrao5':
                     match = re.search(r'CLIQUE AQUI PARA ASSISTIR', legenda)
-                    if match:
+                    
+                    if  not match:
                         pass
                     else:
                         imagem = message.photo[-1].file_id
@@ -262,6 +273,7 @@ async def handle_message(message):
                             if link.type == "text_link":
                                 lista_links.append(link.url)
                         link_curso = lista_links[0]
+                        print(link_curso)
                         await bot.send_photo(canal, imagem,
                         caption= construir_mensagem(nome=nome,tamanho=tamanho,categoria=categoria,
                                                     link_curso=link_curso), parse_mode='Markdownv2')
@@ -329,6 +341,56 @@ async def handle_message(message):
                     await bot.send_photo(canal, imagem, caption=construir_mensagem(nome=nome,tamanho=tamanho,duracao=duracao,link_curso=link_curso), parse_mode='Markdownv2')
                     insert_curso(imagem=download, nome=nome, tamanho=tamanho,duracao=duracao,link_curso=link_curso)
                     
+                elif nome_padroes == 'padrao10':
+
+                    #resolver conflito de outro padrao
+                    match_op = re.search(r'👉Assistir Curso👈', legenda)
+                    if match_op:
+                        return
+    
+
+                    imagem = message.photo[-1].file_id
+                    byte =  await bot.get_file(imagem)
+                    file_path = byte.file_path
+                    download = await bot.download_file(file_path)
+                    nome = legenda.split("\n")[0]
+                    tamanho = re.search(r"Tamanho: ([\d.]+ ?(?:GB|GiB))", legenda, re.IGNORECASE).group(1)
+                    duracao_match = re.search(r"Duração: (\d+)h (\d+)min", legenda, re.IGNORECASE)
+                    duracao = f"{duracao_match.group(1)}h {duracao_match.group(2)}min" if duracao_match else "Duração N/A"
+                    
+                    print(nome)
+                    links = message.caption_entities
+                    lista_links = []
+                    for link in links:
+                        if link.type == "text_link":
+                            lista_links.append(link.url)
+                            
+                    link_curso = lista_links[0]
+                    await bot.send_photo(canal, imagem,
+                                          caption=construir_mensagem(nome=nome,tamanho=tamanho,duracao=duracao,link_curso=link_curso), parse_mode='Markdownv2')
+                
+                elif nome_padroes == 'padrao11':
+
+           
+
+                    imagem = message.photo[-1].file_id
+                    byte =  await bot.get_file(imagem)
+                    file_path = byte.file_path
+                    download = await bot.download_file(file_path)
+                    nome = legenda.split("\n")[0]
+                    tamanho = re.search(r"Tamanho: ([\d.]+ ?(?:GB|GiB))", legenda, re.IGNORECASE).group(1)
+                    duracao_match = re.search(r"Duração: (\d+)h (\d+)min", legenda, re.IGNORECASE)
+                    duracao = f"{duracao_match.group(1)}h {duracao_match.group(2)}min" if duracao_match else "Duração N/A"  
+                    
+                    print(nome)
+                    links = message.caption_entities
+                    lista_links = []
+                    for link in links:
+                        if link.type == "text_link":
+                            lista_links.append(link.url)
+                    link_curso = lista_links[0]
+
+
 async def main():
     await bot.polling(none_stop=True)
 
